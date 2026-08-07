@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AS 4678 Earth-Retaining Structures Calculator</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="site-header-inner">
+    <h1>Earth-Retaining Structures Calculator</h1>
+    <p>Based on the limit-state design methodology of AS 4678-2002 (Incorporating Amendment Nos 1 &amp; 2)</p>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab-btn active" data-tab="classification">1. Classification &amp; Soil</button>
+  <button class="tab-btn" data-tab="stability">2. Wall Stability</button>
+  <button class="tab-btn" data-tab="reinforcement">3. MSE Reinforcement</button>
+  <button class="tab-btn" data-tab="anchors">4. Anchors &amp; Nails</button>
+</nav>
+
+<main id="app" class="app"></main>
+
+<footer class="site-footer">
+  <p>
+    <strong>Disclaimer:</strong> this tool is an informative design aid implementing classical
+    geotechnical formulas together with the partial factors and limit-state format published in
+    AS 4678-2002. It does not reproduce the text of the Standard and is not a substitute for the
+    current, complete Standard or for review and sign-off by a suitably qualified and
+    experienced engineer. Always confirm inputs, assumptions and results against the current
+    edition of AS 4678 and site-specific geotechnical advice.
+  </p>
+</footer>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
