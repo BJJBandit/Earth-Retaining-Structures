@@ -58,6 +58,109 @@ function bearingFactors(phiDeg) {
   return { Nq, Nc, Ngamma };
 }
 
+function clamp(v, lo, hi) {
+  return Math.max(lo, Math.min(hi, v));
+}
+
+function rotate2D(x, y, angleRad) {
+  const c = Math.cos(angleRad);
+  const s = Math.sin(angleRad);
+  return [x * c - y * s, x * s + y * c];
+}
+
+// Schematic (not-to-scale) cross-section showing which plane/face the selected
+// earth-pressure theory applies the active thrust to, redrawn from the live inputs.
+function buildPressureDiagram(p) {
+  const scale = 38;
+  const originX = 55;
+  const baseY = 235;
+  const betaDeg = clamp(p.betaDeg, 0, 32);
+  const slopeRunPx = 110;
+  const slopeRisePx = slopeRunPx * Math.tan(deg2rad(betaDeg));
+
+  const ARROW = `<marker id="arrowHead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--diagram-arrow)"/></marker>`;
+
+  let wallShape, planePath, arrows = [], labels = [], groundLine;
+
+  if (p.method === "coulomb") {
+    const alphaDeg = clamp(p.wallBatterDeg, -25, 30);
+    const totalHpx = clamp(p.H * scale, 90, 210);
+    const wallBaseWpx = clamp((p.toeLength + p.stemThickness) * scale, 45, 140);
+    const topY = baseY - totalHpx;
+    const frontX = originX;
+    const backBottomX = frontX + wallBaseWpx;
+    const rawBackTopX = backBottomX - Math.tan(deg2rad(alphaDeg)) * totalHpx;
+    const backTopX = Math.max(rawBackTopX, frontX + 14);
+
+    wallShape = `<polygon points="${frontX},${baseY} ${backBottomX},${baseY} ${backTopX},${topY} ${frontX},${topY}" class="diagram-wall"/>`;
+    groundLine = `<polyline points="${backTopX},${topY} ${backTopX + slopeRunPx},${topY - slopeRisePx}" class="diagram-ground"/>`;
+    planePath = `<line x1="${backBottomX}" y1="${baseY}" x2="${backTopX}" y2="${topY}" class="diagram-plane-solid" />`;
+
+    const dx = backTopX - backBottomX;
+    const dy = topY - baseY;
+    const len = Math.hypot(dx, dy) || 1;
+    let nx = dy / len, ny = -dx / len;
+    if (nx < 0) { nx = -nx; ny = -ny; }
+    const deltaRad = deg2rad(clamp(p.wallFrictionDeltaDeg, 0, 35));
+    const [rnx, rny] = rotate2D(nx, ny, -deltaRad);
+    [0.15, 0.4, 0.65, 0.88].forEach((t) => {
+      const x = backBottomX + t * dx;
+      const y = baseY + t * dy;
+      const alen = 10 + (1 - t) * 2 + t * 30;
+      arrows.push(
+        `<line x1="${(x + rnx * alen).toFixed(1)}" y1="${(y + rny * alen).toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" class="diagram-arrow" marker-end="url(#arrowHead)"/>`
+      );
+    });
+    labels.push(`<text x="${(backBottomX + backTopX) / 2 + 14}" y="${(baseY + topY) / 2}" class="diagram-label">δ, α</text>`);
+    labels.push(`<text x="${backTopX + slopeRunPx / 2 - 10}" y="${topY - slopeRisePx / 2 - 8}" class="diagram-label">β</text>`);
+  } else {
+    const stemHpx = clamp((p.H - p.baseThickness) * scale, 70, 190);
+    const baseTpx = clamp(p.baseThickness * scale, 8, 26);
+    const toeWpx = clamp(p.toeLength * scale, 16, 60);
+    const stemWpx = clamp(p.stemThickness * scale, 10, 40);
+    const heelWpx = clamp(Math.max(p.B - p.toeLength - p.stemThickness, 0.3) * scale, 24, 110);
+
+    const baseTopY = baseY - baseTpx;
+    const stemLeftX = originX + toeWpx;
+    const stemRightX = stemLeftX + stemWpx;
+    const stemTopY = baseTopY - stemHpx;
+    const heelRightX = stemRightX + heelWpx;
+
+    wallShape = `
+      <rect x="${originX}" y="${baseTopY}" width="${heelRightX - originX}" height="${baseY - baseTopY}" class="diagram-wall"/>
+      <rect x="${stemLeftX}" y="${stemTopY}" width="${stemWpx}" height="${baseTopY - stemTopY}" class="diagram-wall"/>`;
+    groundLine = `<polyline points="${stemRightX},${stemTopY} ${heelRightX},${stemTopY} ${heelRightX + slopeRunPx},${stemTopY - slopeRisePx}" class="diagram-ground"/>`;
+    planePath = `<line x1="${heelRightX}" y1="${baseY}" x2="${heelRightX}" y2="${stemTopY}" class="diagram-plane"/>`;
+
+    [0.15, 0.4, 0.65, 0.88].forEach((t) => {
+      const y = stemTopY + t * (baseY - stemTopY);
+      const alen = 10 + (1 - t) * 2 + t * 30;
+      arrows.push(
+        `<line x1="${(heelRightX + alen).toFixed(1)}" y1="${y.toFixed(1)}" x2="${heelRightX}" y2="${y.toFixed(1)}" class="diagram-arrow" marker-end="url(#arrowHead)"/>`
+      );
+    });
+    labels.push(`<text x="${heelRightX + 6}" y="${(baseY + stemTopY) / 2 - 40}" class="diagram-label">vertical plane</text>`);
+    labels.push(`<text x="${heelRightX + slopeRunPx / 2 - 10}" y="${stemTopY - slopeRisePx / 2 - 8}" class="diagram-label">β</text>`);
+  }
+
+  const caption =
+    p.method === "coulomb"
+      ? "Coulomb — pressure on the actual battered wall face"
+      : "Rankine — pressure on a vertical plane at the back of the heel";
+
+  return `
+    <svg viewBox="0 0 340 270" class="diagram-svg" role="img" aria-label="Schematic of the ${p.method} earth pressure method">
+      <defs>${ARROW}</defs>
+      <line x1="15" y1="${baseY}" x2="325" y2="${baseY}" class="diagram-datum"/>
+      ${wallShape}
+      ${groundLine}
+      ${planePath}
+      ${arrows.join("")}
+      ${labels.join("")}
+      <text x="170" y="255" class="diagram-caption">${caption}</text>
+    </svg>`;
+}
+
 const st = {
   method: "rankine",
   H: 3.0,
@@ -131,6 +234,39 @@ export function mountStability(root) {
             <input type="number" id="st-gammac" step="0.5">
           </label>
           <p class="hint" id="st-geom-hint"></p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card diagram-card">
+          <h3>Earth pressure diagram <span class="hint-inline">(schematic, not to scale — updates with your inputs)</span></h3>
+          <div id="st-diagram"></div>
+        </div>
+        <div class="card">
+          <h3>Which method should I use?</h3>
+          <details class="explain" open>
+            <summary>Rankine (vertical plane at heel)</summary>
+            <p>Assumes a smooth (frictionless) failure plane and gives active pressure in
+              closed form for a vertical plane, including sloping backfill. Applying it on a
+              vertical plane at the back of the heel — rather than on the actual wall face —
+              makes it valid for cantilever walls with a stepped or battered stem, which is why
+              it's the default here. Ignoring wall friction is slightly conservative (it
+              overestimates the active thrust a little), which is usually acceptable and keeps
+              the calculation simple and robust.</p>
+          </details>
+          <details class="explain">
+            <summary>Coulomb (wall friction &amp; batter)</summary>
+            <p>Applies to the actual back face of the wall and explicitly accounts for wall
+              friction (δ) and a battered/inclined back face (α), which is where it's most
+              useful — gravity or mass-concrete walls with a sloping back face, or cases where
+              crediting wall friction meaningfully reduces the design thrust. It needs
+              judgement in choosing δ (commonly 0.5–0.67 × φ*): an unrealistically high δ will
+              overstate the pressure reduction, so don't just maximise it for a "better"
+              result.</p>
+          </details>
+          <p class="hint">Neither method captures irregular ground, flowing water or trial-wedge
+            conditions — for those, AS 4678 Appendix E points to more general wedge-analysis
+            methods, which this tool does not implement.</p>
         </div>
       </div>
 
@@ -259,6 +395,8 @@ export function mountStability(root) {
       st.method === "coulomb"
         ? coulombKa(soil.phi_star, st.betaDeg, st.wallBatterDeg, st.wallFrictionDeltaDeg)
         : rankineKa(soil.phi_star, st.betaDeg);
+
+    el("#st-diagram").innerHTML = buildPressureDiagram(st);
 
     const soilSummary = el("#st-soil-summary");
     soilSummary.innerHTML = `

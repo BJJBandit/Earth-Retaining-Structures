@@ -13,6 +13,12 @@
   --warn-bg: #fff4e0;
   --warn-text: #8a5a00;
   --code-bg: #eef1f5;
+  --diagram-wall: #c7cdd6;
+  --diagram-wall-stroke: #5b6472;
+  --diagram-ground: #8a6d3b;
+  --diagram-plane: #c1272d;
+  --diagram-arrow: #1d5f8a;
+  --diagram-text: #5b6472;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -31,6 +37,12 @@
     --warn-bg: #3a2c0f;
     --warn-text: #f0c774;
     --code-bg: #232a34;
+    --diagram-wall: #3a4250;
+    --diagram-wall-stroke: #9aa4b2;
+    --diagram-ground: #c9a35d;
+    --diagram-plane: #ef6a6f;
+    --diagram-arrow: #5fa8d3;
+    --diagram-text: #9aa4b2;
   }
 }
 
@@ -263,6 +275,24 @@ label input[type="checkbox"] {
 .pass .verdict-badge { color: var(--pass-text); }
 .fail .verdict-badge { color: var(--fail-text); }
 .verdict-formula { font-size: 0.78rem; color: var(--muted); }
+
+.diagram-card { display: flex; flex-direction: column; }
+.diagram-svg {
+  width: 100%;
+  height: auto;
+  max-height: 280px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.diagram-wall { fill: var(--diagram-wall); stroke: var(--diagram-wall-stroke); stroke-width: 1.5; }
+.diagram-ground { fill: none; stroke: var(--diagram-ground); stroke-width: 2; }
+.diagram-datum { stroke: var(--border); stroke-width: 1; }
+.diagram-plane { stroke: var(--diagram-plane); stroke-width: 2; stroke-dasharray: 5 4; }
+.diagram-plane-solid { stroke: var(--diagram-plane); stroke-width: 2.5; }
+.diagram-arrow { stroke: var(--diagram-arrow); stroke-width: 1.75; }
+.diagram-label { fill: var(--diagram-text); font-size: 9px; }
+.diagram-caption { fill: var(--diagram-text); font-size: 9px; text-anchor: middle; }
 
 .site-footer {
   max-width: 1100px;
