@@ -172,6 +172,31 @@ label input[type="checkbox"] {
   font-weight: normal;
   font-size: 0.78rem;
 }
+.explain {
+  margin-top: 0.35rem;
+}
+.explain summary {
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--accent);
+  list-style: none;
+  display: inline-block;
+}
+.explain summary::-webkit-details-marker { display: none; }
+.explain summary::before {
+  content: "\24D8  ";
+}
+.explain summary:hover { color: var(--accent-dark); }
+.explain[open] summary { margin-bottom: 0.35rem; }
+.explain p {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: normal;
+  background: var(--code-bg);
+  border-radius: 6px;
+  padding: 0.5rem 0.6rem;
+  margin: 0;
+}
 .warn {
   background: var(--warn-bg);
   color: var(--warn-text);

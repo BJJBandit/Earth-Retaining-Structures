@@ -94,6 +94,17 @@ export function mountClassification(root) {
         </label>
         <label>Characteristic cohesion, c' (kPa)
           <input type="number" id="cls-c" step="0.5" value="${store.state.c_char}">
+          <details class="explain">
+            <summary>What is this?</summary>
+            <p>Cohesion (c') is the part of a soil's shear strength that doesn't depend on
+              confining pressure — the intercept of the Mohr-Coulomb failure envelope from
+              drained (effective-stress) testing. Clean, cohesionless materials such as sand or
+              gravel have c' = 0. Only enter a nonzero value for genuinely cohesive fills
+              (clays, cemented/cementitious soils), and only where you're confident it will
+              persist for the structure's design life — cohesion can be lost over time through
+              desiccation cracking, softening or disturbance, so many designers conservatively
+              take c' = 0 for retaining wall backfill even where some cohesion is measured.</p>
+          </details>
         </label>
         <label>Backfill unit weight, γ (kN/m³)
           <input type="number" id="cls-gamma" step="0.5" value="${store.state.gamma}">
